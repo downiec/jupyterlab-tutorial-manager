@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # jupyterlab_tutorial_manager
 
 An extension that allows interactive tutorials to be incorporated.
@@ -31,7 +30,3 @@ npm run build
 jupyter lab build
 ```
 
-=======
-# jupyterlab-tutorial-manager
-An extension that allows interactive tutorials to be incorporated.
->>>>>>> bf96be2dec467b3c29e47ef94fa6b5327095c674
