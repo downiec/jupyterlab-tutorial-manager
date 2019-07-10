@@ -167,6 +167,4 @@ function handleTutorialSkipped(tutorial: ITutorial): void {
   console.log(tutorial.removeTutorialFromMenu(globalMenu.settingsMenu.menu));
 }*/
 
-export * from "./Tutorial";
-export * from "./TutorialManager";
 export default extension;
