@@ -6,15 +6,23 @@ import { JupyterFrontEnd } from "@jupyterlab/application";
 import ErrorBoundary from "./ErrorBoundary";
 import TutorialLauncher from "./TutorialLauncher";
 import ITutorial, { Tutorial } from "./Tutorial";
+import { TutorialOptions } from "./Defaults";
 
-export default class TutorialManager extends Widget {
+export default interface ITutorialManager {
+  createTutorial(id: string, label: string, addToHelpMenu: boolean): ITutorial;
+  launch(...tutorials: ITutorial[] | string[]): Promise<void>;
+  tutorials: ITutorial[];
+}
+
+export class TutorialManager extends Widget implements ITutorialManager {
   private app: JupyterFrontEnd;
   private mainDiv: HTMLDivElement; // The main container for this widget
   private menu: MainMenu;
-  private _tutorialLauncher: TutorialLauncher;
-  private _tutorials: ITutorial[];
 
-  constructor(app: JupyterFrontEnd, menu: MainMenu) {
+  private _tutorialLauncher: TutorialLauncher;
+  private _tutorials: Tutorial[];
+
+  constructor(app: JupyterFrontEnd, menu: MainMenu, options?: TutorialOptions) {
     super();
     this.app = app;
     this.id = "tutorial-manager";
@@ -22,16 +30,19 @@ export default class TutorialManager extends Widget {
     this.mainDiv.id = "jupyterlab-tutorial-manager-main";
     this.menu = menu;
     this.node.appendChild(this.mainDiv);
-    this._tutorials = Array<ITutorial>();
+    this._tutorials = Array<Tutorial>();
     this.title.closable = true;
 
     this.createTutorial = this.createTutorial.bind(this);
-    this.launchTutorial = this.launchTutorial.bind(this);
+    this.launch = this.launch.bind(this);
 
     ReactDOM.render(
       <ErrorBoundary>
         <div id="joyride-tutorial">
-          <TutorialLauncher ref={loader => (this._tutorialLauncher = loader)} />
+          <TutorialLauncher
+            initialTutorialOptions={options}
+            ref={loader => (this._tutorialLauncher = loader)}
+          />
         </div>
       </ErrorBoundary>,
       this.mainDiv
@@ -42,7 +53,7 @@ export default class TutorialManager extends Widget {
     return this._tutorials;
   }
 
-  public createTutorial(
+  createTutorial(
     id: string,
     label: string,
     addToHelpMenu: boolean = true
@@ -62,9 +73,11 @@ export default class TutorialManager extends Widget {
     this.app.commands.addCommand(commandID, {
       execute: () => {
         // Start the tutorial
+        this.menu.helpMenu.menu.activate();
         this._tutorialLauncher.launchTutorial(newTutorial);
       },
-      label: label
+      label: label,
+      className: id
     });
 
     if (addToHelpMenu) {
@@ -76,7 +89,31 @@ export default class TutorialManager extends Widget {
     return newTutorial;
   }
 
-  public launchTutorial(tutorial: ITutorial) {
-    this._tutorialLauncher.launchTutorial(tutorial as Tutorial);
+  async launch(...tutorials: ITutorial[]): Promise<void>;
+  async launch(...tutorialIDs: string[]): Promise<void>;
+  async launch(...tutorials: ITutorial[] | string[]): Promise<void> {
+    if (!tutorials || tutorials.length === 0) {
+      return;
+    }
+
+    const tutorialGroup = Array<Tutorial>();
+    if (typeof tutorials[0] === "object") {
+      (tutorials as Tutorial[]).forEach((tutorial: Tutorial) => {
+        if (tutorial && tutorial.hasSteps) {
+          tutorialGroup.push(tutorial);
+        }
+      });
+    } else {
+      (tutorials as string[]).forEach((tutorialID: string) => {
+        let tutorial: Tutorial = this._tutorials.find((tutorial: Tutorial) => {
+          return tutorial.id === tutorialID;
+        });
+        if (tutorial && tutorial.hasSteps) {
+          tutorialGroup.push(tutorial);
+        }
+      });
+    }
+
+    await this._tutorialLauncher.launchTutorialGroup(tutorialGroup);
   }
 }

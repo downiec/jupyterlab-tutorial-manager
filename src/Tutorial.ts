@@ -1,6 +1,7 @@
-import { placement, Step } from "react-joyride";
+import { placement, Step, CallBackProps } from "react-joyride";
 import { Menu } from "@phosphor/widgets";
 import { Signal, ISignal } from "@phosphor/signaling";
+import Default, { TutorialOptions, LocaleOptions } from "./Defaults";
 
 export default interface ITutorial {
   addStep(step: Step): void;
@@ -11,31 +12,51 @@ export default interface ITutorial {
     placement?: placement,
     title?: string
   ): Step;
-  finished: ISignal<this, void>;
+  skipped: ISignal<this, CallBackProps>;
+  finished: ISignal<this, CallBackProps>;
   hasSteps: boolean;
   id: string;
   label: string;
-  removeTutorialFromMenu(menu: Menu, item: Menu.IItem): void;
+  menuButtons: Menu.IItem[];
+  options: TutorialOptions;
+  removeTutorialFromMenu(menu: Menu): void;
   removeStep(index: number): Step;
+  started: ISignal<this, CallBackProps>;
+  stepChanged: ISignal<this, CallBackProps>;
   steps: Step[];
-  started: ISignal<this, void>;
 }
 
 export class Tutorial implements ITutorial {
-  public id: string;
-  public label: string;
+  id: string;
+  label: string;
 
-  public _finished: Signal<this, void>;
-  public _started: Signal<this, void>;
+  _skipped: Signal<this, CallBackProps>;
+  _finished: Signal<this, CallBackProps>;
+  _started: Signal<this, CallBackProps>;
+  _stepChanged: Signal<this, CallBackProps>;
+
   private _command: string;
+  private _menuButtons: Menu.IItem[];
+  private _options: TutorialOptions;
   private _steps: Step[];
-  constructor(id: string, command: string, label?: string) {
-    this.id = id;
+  static DEFAULT_LOCALE: LocaleOptions;
+
+  constructor(
+    id: string,
+    command: string,
+    label?: string,
+    options?: TutorialOptions
+  ) {
     this._command = command;
+    this._skipped = new Signal<this, CallBackProps>(this);
+    this._finished = new Signal<this, CallBackProps>(this);
+    this.id = id;
     this.label = label;
-    this._steps = Array<Step>();
-    this._started = new Signal<this, void>(this);
-    this._finished = new Signal<this, void>(this);
+    this._menuButtons = Array<Menu.IItem>();
+    this._options = options ? options : Default.options();
+    this._started = new Signal<this, CallBackProps>(this);
+    this._stepChanged = new Signal<this, CallBackProps>(this);
+    this._steps = new Array<Step>();
 
     this.addStep = this.addStep.bind(this);
     this.addTutorialToMenu = this.addTutorialToMenu.bind(this);
@@ -44,8 +65,35 @@ export class Tutorial implements ITutorial {
     this.removeStep = this.removeStep.bind(this);
   }
 
+  get skipped(): ISignal<this, CallBackProps> {
+    return this._skipped;
+  }
+
+  get finished(): ISignal<this, CallBackProps> {
+    return this._finished;
+  }
   get hasSteps(): boolean {
     return this.steps.length > 0;
+  }
+
+  get menuButtons(): Menu.IItem[] {
+    return this._menuButtons;
+  }
+
+  get options(): TutorialOptions {
+    return this._options;
+  }
+
+  set options(options: TutorialOptions) {
+    this._options = options;
+  }
+
+  get started(): ISignal<this, CallBackProps> {
+    return this._started;
+  }
+
+  get stepChanged(): ISignal<this, CallBackProps> {
+    return this._stepChanged;
   }
 
   get steps(): Step[] {
@@ -56,29 +104,25 @@ export class Tutorial implements ITutorial {
     this._steps = steps;
   }
 
-  get finished(): ISignal<this, void> {
-    return this._finished;
-  }
-
-  get started(): ISignal<this, void> {
-    return this._started;
-  }
-
-  public addStep(step: Step): void {
+  addStep(step: Step): void {
     if (step) {
       this.steps.push(step);
     }
   }
 
-  public addTutorialToMenu(menu: Menu): Menu.IItem {
+  addTutorialToMenu(menu: Menu, buttonOptions?: Menu.IItemOptions): Menu.IItem {
     const btnOptions = {
       args: {},
       command: this._command
     };
-    return menu.addItem(btnOptions);
+    const menuButton: Menu.IItem = menu.addItem(
+      buttonOptions ? buttonOptions : btnOptions
+    );
+    this._menuButtons.push(menuButton);
+    return menuButton;
   }
 
-  public createAndAddStep(
+  createAndAddStep(
     target: string,
     content: string,
     placement?: placement,
@@ -94,11 +138,30 @@ export class Tutorial implements ITutorial {
     return newStep;
   }
 
-  public removeTutorialFromMenu(menu: Menu, item: Menu.IItem): void {
-    menu.removeItem(item);
+  removeTutorialFromMenu(menu: Menu): Menu.IItem[] {
+    if (
+      !menu ||
+      !menu.items ||
+      menu.items.length <= 0 ||
+      this._menuButtons.length <= 0
+    ) {
+      return; // No-op if menu or buttons list are empty
+    }
+
+    let menuItems: Set<Menu.IItem> = new Set(menu.items);
+    let tutorialItems: Set<Menu.IItem> = new Set(this._menuButtons);
+    let intersection: Set<Menu.IItem> = new Set(
+      [...menuItems].filter(item => tutorialItems.has(item))
+    );
+    const itemsToRemove: Menu.IItem[] = Array.from(intersection);
+    itemsToRemove.forEach((item: Menu.IItem, idx: number) => {
+      menu.removeItem(item);
+      this._menuButtons.splice(idx, 1);
+    });
+    return itemsToRemove;
   }
 
-  public removeStep(index: number): Step {
+  removeStep(index: number): Step {
     if (index < 0 || index >= this.steps.length) {
       return;
     }

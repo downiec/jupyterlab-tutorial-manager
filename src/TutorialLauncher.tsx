@@ -1,34 +1,15 @@
 import * as React from "react";
 // tslint:disable-next-line
-import ReactJoyride, { CallBackProps, STATUS, Step } from "react-joyride";
-import { Tutorial } from "./Tutorial";
+import ReactJoyride, { CallBackProps, STATUS } from "react-joyride";
+import ITutorial, { Tutorial } from "./Tutorial";
+import Default, { TutorialOptions } from "./Defaults";
 
-const DEFAULT_TUTORIAL: Step[] = [
-  {
-    content:
-      "Welcome to Jupyter Lab! The following tutorial will point out some main UI elements of JupyterLab.",
-    placement: "center",
-    target: "#jp-main-dock-panel",
-    title: "Welcome to Jupyter Lab!"
-  },
-  {
-    content:
-      "This is the main content area where notebooks and other content can be viewed and edited.",
-    placement: "left",
-    target: "#jp-main-dock-panel",
-    title: "Main Content"
-  },
-  {
-    content: `This is the top menu bar.`,
-    placement: "bottom",
-    target: "#jp-MainMenu",
-    title: "Main Menu Options"
-  }
-];
-
-interface ITutorialLauncherProps {}
+interface ITutorialLauncherProps {
+  initialTutorialOptions?: TutorialOptions;
+}
 
 interface ITutorialLauncherState {
+  options: TutorialOptions;
   run: boolean;
   runOnStart: boolean;
   tutorial: Tutorial;
@@ -39,53 +20,113 @@ export default class TutorialLauncher extends React.Component<
   ITutorialLauncherState
 > {
   private _prevStatus: string;
+  private _prevStepIndex: number;
   constructor(props: ITutorialLauncherProps) {
     super(props);
+    this._prevStatus = STATUS.READY;
+    this._prevStepIndex = -1;
+
     this.state = {
+      options: props.initialTutorialOptions
+        ? props.initialTutorialOptions
+        : Default.options(),
       run: false,
       runOnStart: false,
       tutorial: null
     };
 
-    this._prevStatus = STATUS.READY;
     this.handleJoyrideEvents = this.handleJoyrideEvents.bind(this);
     this.launchTutorial = this.launchTutorial.bind(this);
+    this.launchTutorialGroup = this.launchTutorialGroup.bind(this);
   }
 
-  public async launchTutorial(tutorial: Tutorial): Promise<void> {
+  async launchTutorial(tutorial: Tutorial): Promise<void> {
     if (!tutorial) {
       throw new Error("The tutorial was null or undefined!");
     }
     if (!tutorial.hasSteps) {
       throw new Error("The tutorial doesn't have any steps!");
     }
-    await this.setState({
-      run: true,
-      tutorial: tutorial
-    });
+
+    // If a previous tutorial was launched, end it early and fire started signal for new tutorial
+    if (this.state.run && this.state.tutorial) {
+      await this.setState({ run: false });
+    }
+
+    // If options were specified in tutorial, set options as well
+    if (tutorial.options) {
+      await this.setState({
+        options: tutorial.options,
+        run: true,
+        tutorial: tutorial
+      });
+    } else {
+      await this.setState({
+        run: true,
+        tutorial: tutorial
+      });
+    }
   }
 
-  public render(): JSX.Element {
+  launchTutorialGroup(tutorials: Tutorial[]): void {
+    if (!tutorials || tutorials.length <= 0) {
+      return;
+    }
+
+    if (tutorials.length === 1) {
+      this.launchTutorial(tutorials[0]);
+    } else {
+      let callback = (tutorial: ITutorial) => {
+        if (tutorial) {
+          const newTutorials: Tutorial[] = tutorials.slice(1);
+          this.launchTutorialGroup(newTutorials);
+        }
+        tutorial.finished.disconnect(callback);
+      };
+      this.launchTutorial(tutorials[0]);
+      tutorials[0].finished.connect(callback);
+    }
+  }
+
+  async setStep(tutorial: Tutorial, index: number): Promise<void> {
+    if (!tutorial) {
+      throw new Error("The tutorial is null or undefined!");
+    }
+    if (!tutorial.hasSteps) {
+      throw new Error("The tutorial has no steps!");
+    }
+    const maxIndex: number = tutorial.steps.length - 1;
+    if (index < 0 || index > maxIndex) {
+      throw new Error(`Step index out of range! Step range: [0,${maxIndex}]`);
+    }
+  }
+
+  render(): JSX.Element {
     return (
       <div>
         <ReactJoyride
-          run={this.state.run}
-          steps={
-            this.state.tutorial ? this.state.tutorial.steps : DEFAULT_TUTORIAL
-          }
           callback={this.handleJoyrideEvents}
-          showSkipButton={true}
-          showProgress={true}
-          continuous={true}
-          spotlightClicks={false}
-          scrollToFirstStep={false}
-          locale={{
-            back: "Back",
-            close: "Close",
-            last: "Finish",
-            next: "Next",
-            skip: "Skip"
-          }}
+          continuous={this.state.options.continuous}
+          debug={this.state.options.debug}
+          disableCloseOnEsc={this.state.options.disableCloseOnEsc}
+          disableOverlay={this.state.options.disableOverlay}
+          disableOverlayClose={this.state.options.disableOverlayClose}
+          disableScrolling={this.state.options.disableScrolling}
+          hideBackButton={this.state.options.hideBackButton}
+          locale={this.state.options.locale}
+          run={this.state.run}
+          scrollToFirstStep={this.state.options.scrollToFirstStep}
+          showProgress={this.state.options.showProgress}
+          showSkipButton={this.state.options.showSkipButton}
+          spotlightClicks={this.state.options.spotlightClicks}
+          steps={
+            this.state.tutorial ? this.state.tutorial.steps : Default.steps()
+          }
+          styles={
+            this.state.options.styles
+              ? { options: this.state.options.styles }
+              : { options: Default.styling() }
+          }
         />
       </div>
     );
@@ -95,22 +136,37 @@ export default class TutorialLauncher extends React.Component<
     if (!data) {
       return;
     }
-    const { status, step } = data;
+    const {
+      status,
+      step,
+      action,
+      index,
+      lifecycle,
+      size,
+      type,
+      controlled
+    } = data;
 
-    // Only interested when status changes
-    if (status === this._prevStatus) {
-      return;
+    // Handle status changes when they occur
+    if (status !== this._prevStatus) {
+      this._prevStatus = status;
+      if (status === STATUS.FINISHED) {
+        this.state.tutorial._finished.emit(data);
+        this.setState({ run: false });
+      } else if (status === STATUS.SKIPPED) {
+        this.state.tutorial._skipped.emit(data);
+        this.setState({ run: false });
+      } else if (status === STATUS.RUNNING) {
+        this.state.tutorial._started.emit(data);
+      } else if (status === STATUS.ERROR) {
+        console.error(`An error occurred with the tutorial at step: ${step}`);
+      }
     }
-    // Update previous state
-    this._prevStatus = status;
 
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      this.state.tutorial._finished.emit();
-      this.setState({ run: false });
-    } else if (status === STATUS.RUNNING) {
-      this.state.tutorial._started.emit();
-    } else if (status === STATUS.ERROR) {
-      console.error(`An error occurred with the tutorial at step: ${step}`);
+    // Emit step change event
+    if (status === STATUS.RUNNING && index !== this._prevStepIndex) {
+      this._prevStepIndex = index;
+      this.state.tutorial._stepChanged.emit(data);
     }
   }
 }

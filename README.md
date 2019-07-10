@@ -1,4 +1,4 @@
-# jupyterlab_tutorial_manager
+# jupyterlab-tutorial-manager
 
 An extension that allows interactive tutorials to be incorporated.
 
@@ -10,7 +10,7 @@ An extension that allows interactive tutorials to be incorporated.
 ## Installation
 
 ```bash
-jupyter labextension install jupyterlab_tutorial_manager
+jupyter labextension install jupyterlab-tutorial-manager
 ```
 
 ## Development
