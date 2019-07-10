@@ -11,11 +11,11 @@ import { Token } from "@phosphor/coreutils";
 import { Step, CallBackProps } from "react-joyride";
 import Default from "./Defaults";
 
-const ITutorial = new Token<ITutorial>(
+export const ITutorial = new Token<ITutorial>(
   "@cdat/joyride-tutorial-manager:ITutorial"
 );
 
-const ITutorialManager = new Token<ITutorialManager>(
+export const ITutorialManager = new Token<ITutorialManager>(
   "@cdat/joyride-tutorial-manager:TutorialManager"
 );
 
