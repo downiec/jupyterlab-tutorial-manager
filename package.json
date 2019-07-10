@@ -1,6 +1,6 @@
 {
   "name": "@downie4/tutorial_manager",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "An extension that allows interactive tutorials to be incorporated into JupyterLab.",
   "keywords": [
     "jupyter",
