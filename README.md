@@ -1,16 +1,16 @@
 # jupyterlab-tutorial-manager
 
-An extension that allows interactive tutorials to be incorporated.
-
+An extension that allows interactive tutorials to be created and viewed within Jupyter Lab.
+Built using React Joyride: https://github.com/gilbarbara/react-joyride
 
 ## Prerequisites
 
-* JupyterLab
+- JupyterLab
 
 ## Installation
 
 ```bash
-jupyter labextension install jupyterlab-tutorial-manager
+jupyter labextension install @downie4/tutorial_manager
 ```
 
 ## Development
@@ -29,4 +29,3 @@ To rebuild the package and the JupyterLab app:
 npm run build
 jupyter lab build
 ```
-
