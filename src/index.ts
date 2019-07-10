@@ -6,11 +6,10 @@ import {
 import "../style/index.css";
 import { MainMenu, IMainMenu } from "@jupyterlab/mainmenu";
 import ITutorialManager, { TutorialManager } from "./TutorialManager";
-//import { Step } from "react-joyride";
 import ITutorial from "./Tutorial";
 import { Token } from "@phosphor/coreutils";
-//import { Step, CallBackProps } from "react-joyride";
-//import Default from "./Defaults";
+import { Step, CallBackProps } from "react-joyride";
+import Default from "./Defaults";
 
 const ITutorial = new Token<ITutorial>(
   "@cdat/joyride-tutorial-manager:ITutorial"
@@ -20,7 +19,7 @@ const ITutorialManager = new Token<ITutorialManager>(
   "@cdat/joyride-tutorial-manager:TutorialManager"
 );
 
-/*const WELCOME_TUTORIAL: Step[] = [
+const WELCOME_TUTORIAL: Step[] = [
   {
     content:
       "Welcome to Jupyter Lab! The following tutorial will point out some main UI elements of JupyterLab.",
@@ -44,7 +43,7 @@ const ITutorialManager = new Token<ITutorialManager>(
   }
 ];
 
-let globalMenu: MainMenu;*/
+let globalMenu: MainMenu;
 
 /**
  * Initialization data for the jupyterlab_tutorial_manager extension.
@@ -57,9 +56,7 @@ const extension: JupyterFrontEndPlugin<ITutorialManager> = {
   provides: ITutorialManager
 };
 
-function activate(app: JupyterFrontEnd, menu: MainMenu): TutorialManager {
-  //globalMenu = menu;
-
+function activate(app: JupyterFrontEnd, menu: MainMenu): ITutorialManager {
   // Create tutorial manager
   let tutorialManager = new TutorialManager(app, menu);
 
@@ -170,4 +167,6 @@ function handleTutorialSkipped(tutorial: ITutorial): void {
   console.log(tutorial.removeTutorialFromMenu(globalMenu.settingsMenu.menu));
 }*/
 
+export * from "./Tutorial";
+export * from "./TutorialManager";
 export default extension;
