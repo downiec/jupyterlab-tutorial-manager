@@ -5,19 +5,11 @@ import {
 
 import "../style/index.css";
 import { MainMenu, IMainMenu } from "@jupyterlab/mainmenu";
-import ITutorialManager, { TutorialManager } from "./TutorialManager";
-import ITutorial from "./Tutorial";
-import { Token } from "@phosphor/coreutils";
 import { Step, CallBackProps } from "react-joyride";
-import Default from "./Defaults";
 
-export const ITutorial = new Token<ITutorial>(
-  "@cdat/joyride-tutorial-manager:ITutorial"
-);
-
-export const ITutorialManager = new Token<ITutorialManager>(
-  "@cdat/joyride-tutorial-manager:TutorialManager"
-);
+import { ITutorial, ITutorialManager } from "./tokens";
+import { TutorialManager } from "./TutorialManager";
+import { TutorialDefaults } from "./constants";
 
 const WELCOME_TUTORIAL: Step[] = [
   {
@@ -51,28 +43,29 @@ let globalMenu: MainMenu;
 const extension: JupyterFrontEndPlugin<ITutorialManager> = {
   activate,
   autoStart: true,
-  id: "jupyterlab-tutorial-manager",
+  id: "@cdat/jupyterlab-tutorial-manager",
   requires: [IMainMenu],
   provides: ITutorialManager
 };
 
 function activate(app: JupyterFrontEnd, menu: MainMenu): ITutorialManager {
   // Create tutorial manager
-  let tutorialManager = new TutorialManager(app, menu);
+  const tutorialManager = new TutorialManager(app, menu);
+  globalMenu = menu;
 
   app.started.then(() => {
     // Attach the widget to the main work area if it's not there
     if (!tutorialManager.isAttached) {
       app.shell.add(tutorialManager, "main");
-      //testTutorialManager(tutorialManager);
+      testTutorialManager(tutorialManager);
     }
   });
 
-  console.log("Jupyterlab-tutorial-manager is activated!");
+  //console.log("Jupyterlab-tutorial-manager is activated!");
   return tutorialManager;
 }
 
-/*async function testTutorialManager(
+async function testTutorialManager(
   tutorialManager: ITutorialManager
 ): Promise<void> {
   let testTutorial = tutorialManager.createTutorial(
@@ -91,7 +84,7 @@ function activate(app: JupyterFrontEnd, menu: MainMenu): ITutorialManager {
     true
   );
 
-  testTutorial.steps = Default.steps();
+  testTutorial.steps = TutorialDefaults.steps;
 
   testTutorial2.addStep(WELCOME_TUTORIAL[0]);
   testTutorial2.createAndAddStep(
@@ -165,6 +158,10 @@ function handleTutorialFinished(tutorial: ITutorial): void {
 function handleTutorialSkipped(tutorial: ITutorial): void {
   console.log(`Tutorial: ${tutorial.label} ended early!`);
   console.log(tutorial.removeTutorialFromMenu(globalMenu.settingsMenu.menu));
-}*/
+}
 
+export * from "./constants";
+export * from "./Tutorial";
+export * from "./TutorialManager";
+export * from "./tokens";
 export default extension;

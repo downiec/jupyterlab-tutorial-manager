@@ -38,8 +38,10 @@ export type TutorialOptions = {
   styles: StyleOptions;
 };
 
-export default class Default {
-  static locale(): LocaleOptions {
+export class TutorialDefaults {
+  private constructor() {}
+
+  static get locale(): LocaleOptions {
     return {
       back: "Previous",
       close: "Close",
@@ -49,7 +51,7 @@ export default class Default {
     };
   }
 
-  static styling(): StyleOptions {
+  static get styling(): StyleOptions {
     return {
       arrowColor: "#fff",
       backgroundColor: "#fff",
@@ -63,7 +65,7 @@ export default class Default {
     };
   }
 
-  static options(): TutorialOptions {
+  static get options(): TutorialOptions {
     return {
       continuous: true,
       debug: false,
@@ -72,18 +74,18 @@ export default class Default {
       disableOverlayClose: false,
       disableScrolling: false,
       hideBackButton: false,
-      locale: Default.locale(),
+      locale: this.locale,
       scrollOffset: undefined,
       scrollToFirstStep: undefined,
       showProgress: true,
       showSkipButton: true,
       spotlightClicks: false,
       spotlightPadding: undefined,
-      styles: Default.styling()
+      styles: this.styling
     };
   }
 
-  static steps(): Step[] {
+  static get steps(): Step[] {
     return [
       {
         content:
@@ -110,7 +112,88 @@ export default class Default {
         placement: "right",
         target: ".jp-SideBar.jp-mod-left",
         title: "Left Side Bar"
-      },
+      }
     ];
   }
 }
+
+/*
+export class DefaultLocaleOptions {
+  static readonly back: string = "Previous";
+  static readonly close: string = "Close";
+  static readonly last: string = "Finish";
+  static readonly next: string = "Next";
+  static readonly skip: string = "Skip";
+}
+
+export class DefaultOptions {
+  static readonly LOCALE: LocaleOptions = {
+    back: "Previous",
+    close: "Close",
+    last: "Finish",
+    next: "Next",
+    skip: "Skip"
+  };
+
+  static readonly styling: StyleOptions = {
+    arrowColor: "#fff",
+    backgroundColor: "#fff",
+    beaconSize: 36,
+    overlayColor: "rgba(0, 0, 0, 0.5)",
+    primaryColor: "#f04",
+    spotlightShadow: "0 0 15px rgba(0, 0, 0, 0.5)",
+    textColor: "#333",
+    width: undefined,
+    zIndex: 100
+  };
+
+  static readonly options: TutorialOptions = {
+    continuous: true,
+    debug: false,
+    disableCloseOnEsc: false,
+    disableOverlay: false,
+    disableOverlayClose: false,
+    disableScrolling: false,
+    hideBackButton: false,
+    locale: LocaleOptions.,
+    scrollOffset: undefined,
+    scrollToFirstStep: undefined,
+    showProgress: true,
+    showSkipButton: true,
+    spotlightClicks: false,
+    spotlightPadding: undefined,
+    styles: Default.styling()
+  };
+
+  static steps: Step[] = [
+    {
+      content:
+        "The following tutorial will point out some of the main UI components within JupyterLab.",
+      placement: "center",
+      target: "#jp-main-dock-panel",
+      title: "Welcome to Jupyter Lab!"
+    },
+    {
+      content:
+        "This is the main content area where notebooks and other content can be viewed and edited.",
+      placement: "left-end",
+      target: "#jp-main-dock-panel",
+      title: "Main Content"
+    },
+    {
+      content: `This is the top menu bar where you can access several menus.`,
+      placement: "bottom",
+      target: "#jp-MainMenu",
+      title: "Top Menu Options"
+    },
+    {
+      content: `This is the left side menu bar where you can switch between functional panels.`,
+      placement: "right",
+      target: ".jp-SideBar.jp-mod-left",
+      title: "Left Side Bar"
+    }
+  ];
+
+  private constructor() {}
+}
+*/

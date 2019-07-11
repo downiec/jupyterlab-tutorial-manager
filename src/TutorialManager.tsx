@@ -5,14 +5,9 @@ import { MainMenu } from "@jupyterlab/mainmenu";
 import { JupyterFrontEnd } from "@jupyterlab/application";
 import ErrorBoundary from "./ErrorBoundary";
 import TutorialLauncher from "./TutorialLauncher";
-import ITutorial, { Tutorial } from "./Tutorial";
-import { TutorialOptions } from "./Defaults";
-
-export default interface ITutorialManager {
-  createTutorial(id: string, label: string, addToHelpMenu: boolean): ITutorial;
-  launch(...tutorials: ITutorial[] | string[]): Promise<void>;
-  tutorials: ITutorial[];
-}
+import { Tutorial } from "./Tutorial";
+import { TutorialOptions } from "./constants";
+import { ITutorialManager, ITutorial } from "./tokens";
 
 export class TutorialManager extends Widget implements ITutorialManager {
   private app: JupyterFrontEnd;

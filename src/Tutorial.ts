@@ -1,30 +1,8 @@
 import { placement, Step, CallBackProps } from "react-joyride";
 import { Menu } from "@phosphor/widgets";
 import { Signal, ISignal } from "@phosphor/signaling";
-import Default, { TutorialOptions, LocaleOptions } from "./Defaults";
-
-export default interface ITutorial {
-  addStep(step: Step): void;
-  addTutorialToMenu(menu: Menu): Menu.IItem;
-  createAndAddStep(
-    target: string,
-    content: string,
-    placement?: placement,
-    title?: string
-  ): Step;
-  skipped: ISignal<this, CallBackProps>;
-  finished: ISignal<this, CallBackProps>;
-  hasSteps: boolean;
-  id: string;
-  label: string;
-  menuButtons: Menu.IItem[];
-  options: TutorialOptions;
-  removeTutorialFromMenu(menu: Menu): void;
-  removeStep(index: number): Step;
-  started: ISignal<this, CallBackProps>;
-  stepChanged: ISignal<this, CallBackProps>;
-  steps: Step[];
-}
+import { TutorialOptions, LocaleOptions, TutorialDefaults } from "./constants";
+import { ITutorial } from "./tokens";
 
 export class Tutorial implements ITutorial {
   id: string;
@@ -53,7 +31,7 @@ export class Tutorial implements ITutorial {
     this.id = id;
     this.label = label;
     this._menuButtons = Array<Menu.IItem>();
-    this._options = options ? options : Default.options();
+    this._options = { ...options, ...TutorialDefaults.options };
     this._started = new Signal<this, CallBackProps>(this);
     this._stepChanged = new Signal<this, CallBackProps>(this);
     this._steps = new Array<Step>();

@@ -1,8 +1,9 @@
 import * as React from "react";
 // tslint:disable-next-line
 import ReactJoyride, { CallBackProps, STATUS } from "react-joyride";
-import ITutorial, { Tutorial } from "./Tutorial";
-import Default, { TutorialOptions } from "./Defaults";
+import { Tutorial } from "./Tutorial";
+import { TutorialOptions, TutorialDefaults } from "./constants";
+import { ITutorial } from "./tokens";
 
 interface ITutorialLauncherProps {
   initialTutorialOptions?: TutorialOptions;
@@ -29,7 +30,7 @@ export default class TutorialLauncher extends React.Component<
     this.state = {
       options: props.initialTutorialOptions
         ? props.initialTutorialOptions
-        : Default.options(),
+        : TutorialDefaults.options,
       run: false,
       runOnStart: false,
       tutorial: null
@@ -120,12 +121,14 @@ export default class TutorialLauncher extends React.Component<
           showSkipButton={this.state.options.showSkipButton}
           spotlightClicks={this.state.options.spotlightClicks}
           steps={
-            this.state.tutorial ? this.state.tutorial.steps : Default.steps()
+            this.state.tutorial
+              ? this.state.tutorial.steps
+              : TutorialDefaults.steps
           }
           styles={
             this.state.options.styles
               ? { options: this.state.options.styles }
-              : { options: Default.styling() }
+              : { options: TutorialDefaults.styling }
           }
         />
       </div>
